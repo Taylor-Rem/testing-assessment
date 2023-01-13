@@ -3,6 +3,14 @@ const app = express();
 const { bots, playerRecord } = require('./data');
 const { shuffleArray } = require('./utils');
 
+// include and initialize the rollbar library with your access token
+var Rollbar = require('rollbar');
+var rollbar = new Rollbar({
+  accessToken: '97f3547539a244238cfb3411adf79a6e',
+  captureUncaught: true,
+  captureUnhandledRejections: true,
+});
+
 app.use(express.json());
 
 app.use(express.static(`${__dirname}/public`));
@@ -10,6 +18,7 @@ app.use(express.static(`${__dirname}/public`));
 app.get('/api/robots', (req, res) => {
   try {
     res.status(200).send(bots);
+    rollbar.log('user requested all robots');
   } catch (error) {
     console.log('ERROR GETTING BOTS', error);
     res.sendStatus(400);
@@ -29,6 +38,7 @@ app.get('/api/robots/five', (req, res) => {
 });
 
 app.post('/api/duel', (req, res) => {
+  rollbar.log('user started duel');
   try {
     // getting the duos from the front end
     let { compDuo, playerDuo } = req.body;
@@ -56,9 +66,11 @@ app.post('/api/duel', (req, res) => {
     // comparing the total health to determine a winner
     if (compHealthAfterAttack > playerHealthAfterAttack) {
       playerRecord.losses++;
+      rollbar.log(`user lost ${playerRecord.losses} games`);
       res.status(200).send('You lost!');
     } else {
       playerRecord.wins++;
+      rollbar.log(`user won ${playerRecord.wins} games`);
       res.status(200).send('You won!');
     }
   } catch (error) {
